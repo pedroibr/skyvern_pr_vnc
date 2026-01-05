@@ -34,6 +34,8 @@ class RealBrowserManager(BrowserManager):
         extra_http_headers: dict[str, str] | None = None,
         browser_address: str | None = None,
         browser_profile_id: str | None = None,
+        display: str | None = None,
+        cdp_port: int | None = None,
     ) -> BrowserState:
         pw = await async_playwright().start()
         (
@@ -51,6 +53,8 @@ class RealBrowserManager(BrowserManager):
             extra_http_headers=extra_http_headers,
             browser_address=browser_address,
             browser_profile_id=browser_profile_id,
+            display=display,
+            cdp_port=cdp_port,
         )
         return RealBrowserState(
             pw=pw,

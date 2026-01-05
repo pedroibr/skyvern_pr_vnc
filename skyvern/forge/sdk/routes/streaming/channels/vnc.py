@@ -466,7 +466,20 @@ async def get_vnc_channel_for_browser_session(
     Return a vnc channel for a browser session, with a list of loops to run concurrently.
     """
 
+    vnc_port = settings.SKYVERN_BROWSER_VNC_PORT
     if settings.ENV == "local":
+        try:
+            resources = await app.PERSISTENT_SESSIONS_MANAGER.get_or_allocate_local_browser_resources(
+                browser_session_id, organization_id
+            )
+        except Exception:
+            LOG.exception(
+                "Failed to allocate local browser resources",
+                organization_id=organization_id,
+                browser_session_id=browser_session_id,
+            )
+            return None
+        vnc_port = resources.ws_port
         existing_state = await app.PERSISTENT_SESSIONS_MANAGER.get_browser_state(
             browser_session_id, organization_id=organization_id
         )
@@ -481,6 +494,8 @@ async def get_vnc_channel_for_browser_session(
                 browser_state = await app.BROWSER_MANAGER._create_browser_state(
                     url="about:blank",
                     organization_id=organization_id,
+                    display=resources.display,
+                    cdp_port=resources.cdp_port,
                 )
                 await browser_state.get_or_create_page(
                     url="about:blank",
@@ -489,8 +504,8 @@ async def get_vnc_channel_for_browser_session(
                 await app.PERSISTENT_SESSIONS_MANAGER.set_browser_state(browser_session_id, browser_state)
                 await app.DATABASE.set_persistent_browser_session_browser_address(
                     browser_session_id=browser_session_id,
-                    browser_address="http://localhost:9223",
-                    ip_address="127.0.0.1",
+                    browser_address=resources.browser_address,
+                    ip_address=resources.ip_address,
                     ecs_task_arn=None,
                     organization_id=organization_id,
                 )
@@ -506,8 +521,8 @@ async def get_vnc_channel_for_browser_session(
             try:
                 await app.DATABASE.set_persistent_browser_session_browser_address(
                     browser_session_id=browser_session_id,
-                    browser_address="http://localhost:9223",
-                    ip_address="127.0.0.1",
+                    browser_address=resources.browser_address,
+                    ip_address=resources.ip_address,
                     ecs_task_arn=None,
                     organization_id=organization_id,
                 )
@@ -533,7 +548,7 @@ async def get_vnc_channel_for_browser_session(
             client_id=client_id,
             initial_interactor="agent",
             organization_id=organization_id,
-            vnc_port=settings.SKYVERN_BROWSER_VNC_PORT,
+            vnc_port=vnc_port,
             browser_session=browser_session,
             x_api_key=x_api_key,
             websocket=websocket,
@@ -573,11 +588,19 @@ async def get_vnc_channel_for_task(
 
     x_api_key = await get_x_api_key(organization_id)
 
+    vnc_port = settings.SKYVERN_BROWSER_VNC_PORT
+    if settings.ENV == "local" and browser_session:
+        resources = app.PERSISTENT_SESSIONS_MANAGER.get_local_browser_resources(
+            browser_session.persistent_browser_session_id
+        )
+        if resources:
+            vnc_port = resources.ws_port
+
     vnc_channel = VncChannel(
         client_id=client_id,
         initial_interactor="agent",
         organization_id=organization_id,
-        vnc_port=settings.SKYVERN_BROWSER_VNC_PORT,
+        vnc_port=vnc_port,
         x_api_key=x_api_key,
         websocket=websocket,
         browser_session=browser_session,
@@ -618,11 +641,19 @@ async def get_vnc_channel_for_workflow_run(
 
     x_api_key = await get_x_api_key(organization_id)
 
+    vnc_port = settings.SKYVERN_BROWSER_VNC_PORT
+    if settings.ENV == "local" and browser_session:
+        resources = app.PERSISTENT_SESSIONS_MANAGER.get_local_browser_resources(
+            browser_session.persistent_browser_session_id
+        )
+        if resources:
+            vnc_port = resources.ws_port
+
     vnc_channel = VncChannel(
         client_id=client_id,
         initial_interactor="agent",
         organization_id=organization_id,
-        vnc_port=settings.SKYVERN_BROWSER_VNC_PORT,
+        vnc_port=vnc_port,
         browser_session=browser_session,
         workflow_run=workflow_run,
         x_api_key=x_api_key,

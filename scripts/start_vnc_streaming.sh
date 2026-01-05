@@ -8,10 +8,11 @@
 
 set -euo pipefail
 
-readonly DISPLAY_NUM=":99"
 readonly SCREEN_GEOMETRY="1920x1080x24"
-readonly VNC_PORT="5900"
-readonly WS_PORT="6080"
+readonly DISPLAY_BASE="${SKYVERN_STREAM_BASE_DISPLAY:-99}"
+readonly MAX_SESSIONS="${SKYVERN_STREAM_MAX_SESSIONS:-10}"
+readonly VNC_BASE_PORT="${SKYVERN_STREAM_BASE_VNC_PORT:-5900}"
+readonly WS_BASE_PORT="${SKYVERN_STREAM_BASE_WS_PORT:-6080}"
 readonly NOVNC_WEB_DIR="/usr/share/novnc"
 
 log() {
@@ -54,26 +55,31 @@ ensure_running() {
 log "Starting VNC streaming services for Skyvern..."
 log ""
 
-ensure_running \
-  "Xvfb" "exact" "Xvfb" \
-  "Xvfb $DISPLAY_NUM -screen 0 $SCREEN_GEOMETRY > /dev/null 2>&1 &"
+for ((i=0; i<MAX_SESSIONS; i++)); do
+  display=":$((DISPLAY_BASE + i))"
+  vnc_port="$((VNC_BASE_PORT + i))"
+  ws_port="$((WS_BASE_PORT + i))"
 
-ensure_running \
-  "x11vnc" "exact" "x11vnc" \
-  "x11vnc -display $DISPLAY_NUM -bg -nopw -listen localhost -xkb -forever -shared > /dev/null 2>&1"
+  ensure_running \
+    "Xvfb ${display}" "match" "Xvfb ${display}" \
+    "Xvfb ${display} -screen 0 ${SCREEN_GEOMETRY} > /dev/null 2>&1 &"
 
-ensure_running \
-  "websockify" "match" "websockify.*${WS_PORT}" \
-  "websockify $WS_PORT localhost:${VNC_PORT} --web $NOVNC_WEB_DIR --daemon > /dev/null 2>&1"
+  ensure_running \
+    "x11vnc ${display}" "match" "x11vnc.*${display}" \
+    "x11vnc -display ${display} -bg -nopw -listen localhost -xkb -forever -shared -rfbport ${vnc_port} > /dev/null 2>&1"
 
+  ensure_running \
+    "websockify ${ws_port}" "match" "websockify.*${ws_port}" \
+    "websockify ${ws_port} localhost:${vnc_port} --web ${NOVNC_WEB_DIR} --daemon > /dev/null 2>&1"
+done
 
 log ""
 log "🎉 VNC streaming services are now running!"
 log ""
 log "Configuration:"
-log "  - Xvfb display: ${DISPLAY_NUM}"
-log "  - VNC server: localhost:${VNC_PORT}"
-log "  - WebSocket proxy: localhost:${WS_PORT}"
+log "  - Displays: :${DISPLAY_BASE}..:$((DISPLAY_BASE + MAX_SESSIONS - 1))"
+log "  - VNC ports: ${VNC_BASE_PORT}..$((VNC_BASE_PORT + MAX_SESSIONS - 1))"
+log "  - WebSocket ports: ${WS_BASE_PORT}..$((WS_BASE_PORT + MAX_SESSIONS - 1))"
 log ""
 log "To stop services:"
 log "  pkill x11vnc && pkill websockify"

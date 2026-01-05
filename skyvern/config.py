@@ -385,6 +385,12 @@ class Settings(BaseSettings):
     SKYVERN_API_KEY: str = "PLACEHOLDER"
 
     SKYVERN_BROWSER_VNC_PORT: int = 6080
+    # Local multi-session settings (used for local VNC streaming in OSS)
+    LOCAL_BROWSER_SESSION_SLOTS: int = 10
+    LOCAL_BROWSER_BASE_DISPLAY: int = 99
+    LOCAL_BROWSER_BASE_CDP_PORT: int = 9223
+    LOCAL_BROWSER_BASE_VNC_PORT: int = 5900
+    LOCAL_BROWSER_BASE_WS_PORT: int = 6080
     """
     The websockified port on which the VNC server of a persistent browser is
     listening.

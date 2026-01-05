@@ -204,6 +204,7 @@ class BrowserContextFactory:
     def build_browser_args(
         proxy_location: ProxyLocation | None = None,
         cdp_port: int | None = None,
+        display: str | None = None,
         extra_http_headers: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         video_dir = f"{settings.VIDEO_PATH}/{datetime.utcnow().strftime('%Y-%m-%d')}"
@@ -253,6 +254,10 @@ class BrowserContextFactory:
             },
             "extra_http_headers": extra_http_headers,
         }
+        if display:
+            env = dict(os.environ)
+            env["DISPLAY"] = display
+            args["env"] = env
 
         if settings.ENABLE_PROXY:
             proxy_config = setup_proxy()
@@ -456,8 +461,9 @@ async def _create_headless_chromium(
         download_dir=download_dir,
     )
     cdp_port: int | None = _get_cdp_port(kwargs)
+    display: str | None = kwargs.get("display")
     browser_args = BrowserContextFactory.build_browser_args(
-        proxy_location=proxy_location, cdp_port=cdp_port, extra_http_headers=extra_http_headers
+        proxy_location=proxy_location, cdp_port=cdp_port, display=display, extra_http_headers=extra_http_headers
     )
     browser_args.update(
         {
@@ -521,8 +527,9 @@ async def _create_headful_chromium(
         download_dir=download_dir,
     )
     cdp_port: int | None = _get_cdp_port(kwargs)
+    display: str | None = kwargs.get("display")
     browser_args = BrowserContextFactory.build_browser_args(
-        proxy_location=proxy_location, cdp_port=cdp_port, extra_http_headers=extra_http_headers
+        proxy_location=proxy_location, cdp_port=cdp_port, display=display, extra_http_headers=extra_http_headers
     )
     browser_args.update(
         {

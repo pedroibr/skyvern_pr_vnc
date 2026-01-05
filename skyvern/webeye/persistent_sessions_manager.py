@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
+from urllib.parse import urlparse
 from datetime import datetime, timedelta, timezone
 from math import floor
 
@@ -27,6 +29,17 @@ LOG = structlog.get_logger()
 @dataclass
 class BrowserSession:
     browser_state: BrowserState
+
+
+@dataclass(frozen=True)
+class LocalBrowserResources:
+    slot: int
+    display: str
+    cdp_port: int
+    vnc_port: int
+    ws_port: int
+    browser_address: str
+    ip_address: str
 
 
 async def validate_session_for_renewal(
@@ -172,6 +185,9 @@ class PersistentSessionsManager:
     instance: PersistentSessionsManager | None = None
     _browser_sessions: dict[str, BrowserSession] = dict()
     database: AgentDB
+    _local_resources: dict[str, LocalBrowserResources] = dict()
+    _local_slot_assignments: dict[int, str] = dict()
+    _local_alloc_lock: asyncio.Lock = asyncio.Lock()
 
     def __new__(cls, database: AgentDB) -> PersistentSessionsManager:
         if cls.instance is None:
@@ -182,6 +198,109 @@ class PersistentSessionsManager:
 
         cls.instance.database = database
         return cls.instance
+
+    def _local_sessions_enabled(self) -> bool:
+        return settings.ENV == "local" and settings.LOCAL_BROWSER_SESSION_SLOTS > 0
+
+    def get_local_browser_resources(self, session_id: str) -> LocalBrowserResources | None:
+        return self._local_resources.get(session_id)
+
+    async def get_or_allocate_local_browser_resources(
+        self, session_id: str, organization_id: str
+    ) -> LocalBrowserResources:
+        if not self._local_sessions_enabled():
+            raise RuntimeError("Local browser session resources are not enabled.")
+
+        async with self._local_alloc_lock:
+            existing = self._local_resources.get(session_id)
+            if existing:
+                return existing
+
+            persistent_session = await self.database.get_persistent_browser_session(session_id, organization_id)
+            if persistent_session and persistent_session.browser_address:
+                parsed = urlparse(persistent_session.browser_address)
+                if parsed.hostname in {"localhost", "127.0.0.1"} and parsed.port is not None:
+                    slot = parsed.port - settings.LOCAL_BROWSER_BASE_CDP_PORT
+                    if 0 <= slot < settings.LOCAL_BROWSER_SESSION_SLOTS:
+                        display_num = settings.LOCAL_BROWSER_BASE_DISPLAY + slot
+                        vnc_port = settings.LOCAL_BROWSER_BASE_VNC_PORT + slot
+                        ws_port = settings.LOCAL_BROWSER_BASE_WS_PORT + slot
+                        resources = LocalBrowserResources(
+                            slot=slot,
+                            display=f":{display_num}",
+                            cdp_port=parsed.port,
+                            vnc_port=vnc_port,
+                            ws_port=ws_port,
+                            browser_address=persistent_session.browser_address,
+                            ip_address=persistent_session.ip_address or "127.0.0.1",
+                        )
+                        self._local_resources[session_id] = resources
+                        self._local_slot_assignments[slot] = session_id
+                        LOG.info(
+                            "Reusing local browser resources from stored session",
+                            browser_session_id=session_id,
+                            display=resources.display,
+                            cdp_port=resources.cdp_port,
+                            vnc_port=resources.vnc_port,
+                            ws_port=resources.ws_port,
+                        )
+                        return resources
+
+            used_slots: set[int] = set()
+            active_sessions = await self.database.get_active_persistent_browser_sessions(organization_id)
+            for active in active_sessions:
+                if not active.browser_address:
+                    continue
+                parsed = urlparse(active.browser_address)
+                if parsed.hostname not in {"localhost", "127.0.0.1"} or parsed.port is None:
+                    continue
+                slot = parsed.port - settings.LOCAL_BROWSER_BASE_CDP_PORT
+                if 0 <= slot < settings.LOCAL_BROWSER_SESSION_SLOTS:
+                    used_slots.add(slot)
+
+            for slot in range(settings.LOCAL_BROWSER_SESSION_SLOTS):
+                if slot in self._local_slot_assignments or slot in used_slots:
+                    continue
+                display_num = settings.LOCAL_BROWSER_BASE_DISPLAY + slot
+                cdp_port = settings.LOCAL_BROWSER_BASE_CDP_PORT + slot
+                vnc_port = settings.LOCAL_BROWSER_BASE_VNC_PORT + slot
+                ws_port = settings.LOCAL_BROWSER_BASE_WS_PORT + slot
+                resources = LocalBrowserResources(
+                    slot=slot,
+                    display=f":{display_num}",
+                    cdp_port=cdp_port,
+                    vnc_port=vnc_port,
+                    ws_port=ws_port,
+                    browser_address=f"http://localhost:{cdp_port}",
+                    ip_address="127.0.0.1",
+                )
+                self._local_resources[session_id] = resources
+                self._local_slot_assignments[slot] = session_id
+                LOG.info(
+                    "Allocated local browser resources",
+                    browser_session_id=session_id,
+                    display=resources.display,
+                    cdp_port=resources.cdp_port,
+                    vnc_port=resources.vnc_port,
+                    ws_port=resources.ws_port,
+                )
+                return resources
+
+        raise RuntimeError("No available local browser session slots.")
+
+    def release_local_browser_resources(self, session_id: str) -> None:
+        resources = self._local_resources.pop(session_id, None)
+        if not resources:
+            return
+        self._local_slot_assignments.pop(resources.slot, None)
+        LOG.info(
+            "Released local browser resources",
+            browser_session_id=session_id,
+            display=resources.display,
+            cdp_port=resources.cdp_port,
+            vnc_port=resources.vnc_port,
+            ws_port=resources.ws_port,
+        )
 
     def watch_session_pool(self) -> None:
         return None
@@ -362,6 +481,9 @@ class PersistentSessionsManager:
                 organization_id=organization_id,
                 session_id=browser_session_id,
             )
+
+        if self._local_sessions_enabled():
+            self.release_local_browser_resources(browser_session_id)
 
         await self.database.close_persistent_browser_session(browser_session_id, organization_id)
 
