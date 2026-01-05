@@ -201,7 +201,6 @@ class LocalStorage(BaseStorage):
             browser_session_path=str(stored_folder_path),
         )
 
-        # Copy all files from the directory to the stored folder
         for root, _, files in os.walk(source_directory):
             for file in files:
                 source_file_path = Path(root) / file
@@ -253,7 +252,15 @@ class LocalStorage(BaseStorage):
                 relative_path = source_file_path.relative_to(source_directory)
                 target_file_path = stored_folder_path / relative_path
                 self._create_directories_if_not_exists(target_file_path)
-                shutil.copy2(source_file_path, target_file_path)
+                try:
+                    shutil.copy2(source_file_path, target_file_path)
+                except (FileNotFoundError, OSError):
+                    LOG.warning(
+                        "Skipping missing browser profile file during export",
+                        organization_id=organization_id,
+                        profile_id=profile_id,
+                        source_file_path=str(source_file_path),
+                    )
 
     async def retrieve_browser_profile(self, organization_id: str, profile_id: str) -> str | None:
         """Retrieve browser profile from local storage."""
