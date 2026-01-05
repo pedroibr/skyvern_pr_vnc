@@ -4648,6 +4648,40 @@ class AgentDB(BaseAlchemyDB):
             LOG.error("UnexpectedError", exc_info=True)
             raise
 
+    async def clear_persistent_browser_session_browser_address(
+        self,
+        browser_session_id: str,
+        organization_id: str | None = None,
+    ) -> None:
+        """Clear the browser address for a persistent browser session."""
+        try:
+            async with self.Session() as session:
+                persistent_browser_session = (
+                    await session.scalars(
+                        select(PersistentBrowserSessionModel)
+                        .filter_by(persistent_browser_session_id=browser_session_id)
+                        .filter_by(organization_id=organization_id)
+                        .filter_by(deleted_at=None)
+                    )
+                ).first()
+                if not persistent_browser_session:
+                    raise NotFoundError(f"PersistentBrowserSession {browser_session_id} not found")
+
+                persistent_browser_session.browser_address = None
+                persistent_browser_session.ip_address = None
+                persistent_browser_session.ecs_task_arn = None
+                await session.commit()
+                await session.refresh(persistent_browser_session)
+        except NotFoundError:
+            LOG.error("NotFoundError", exc_info=True)
+            raise
+        except SQLAlchemyError:
+            LOG.error("SQLAlchemyError", exc_info=True)
+            raise
+        except Exception:
+            LOG.error("UnexpectedError", exc_info=True)
+            raise
+
     async def mark_persistent_browser_session_deleted(self, session_id: str, organization_id: str) -> None:
         """Mark a persistent browser session as deleted."""
         try:

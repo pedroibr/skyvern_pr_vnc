@@ -485,6 +485,18 @@ class PersistentSessionsManager:
         if self._local_sessions_enabled():
             self.release_local_browser_resources(browser_session_id)
 
+        try:
+            await self.database.clear_persistent_browser_session_browser_address(
+                browser_session_id, organization_id
+            )
+        except Exception:
+            LOG.warning(
+                "Failed to clear browser session address",
+                organization_id=organization_id,
+                session_id=browser_session_id,
+                exc_info=True,
+            )
+
         await self.database.close_persistent_browser_session(browser_session_id, organization_id)
 
     async def close_all_sessions(self, organization_id: str) -> None:
