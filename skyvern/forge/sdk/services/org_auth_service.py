@@ -132,7 +132,7 @@ async def get_current_user_id(
     x_api_key: Annotated[str | None, Header(include_in_schema=False)] = None,
     x_user_agent: Annotated[str | None, Header(include_in_schema=False)] = None,
 ) -> str:
-    if authorization:
+    if authorization and app.authenticate_user_function:
         return await _authenticate_user_helper(authorization)
 
     if x_api_key and x_user_agent == "skyvern-ui":
