@@ -1,7 +1,7 @@
 import { Status } from "@/api/types";
 import { useWorkflowRunWithWorkflowQuery } from "../hooks/useWorkflowRunWithWorkflowQuery";
 import { ZoomableImage } from "@/components/ZoomableImage";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { statusIsNotFinalized } from "@/routes/tasks/types";
 import { useCredentialGetter } from "@/hooks/useCredentialGetter";
 import { useFirstParam } from "@/hooks/useFirstParam";
@@ -19,8 +19,6 @@ interface Props {
   alwaysShowStream?: boolean;
 }
 
-let socket: WebSocket | null = null;
-
 const wssBaseUrl = import.meta.env.VITE_WSS_BASE_URL;
 
 function WorkflowRunStream(props?: Props) {
@@ -28,6 +26,7 @@ function WorkflowRunStream(props?: Props) {
   const workflowRunId = useFirstParam("workflowRunId", "runId");
   const { data: workflowRun } = useWorkflowRunWithWorkflowQuery();
   const [streamImgSrc, setStreamImgSrc] = useState<string>("");
+  const socketRef = useRef<WebSocket | null>(null);
   const showStream =
     alwaysShowStream || (workflowRun && statusIsNotFinalized(workflowRun));
   const credentialGetter = useCredentialGetter();
@@ -41,6 +40,7 @@ function WorkflowRunStream(props?: Props) {
     }
 
     async function run() {
+      setStreamImgSrc("");
       // Create WebSocket connection.
       let credential = null;
       if (credentialGetter) {
@@ -50,14 +50,14 @@ function WorkflowRunStream(props?: Props) {
         const apiKey = getRuntimeApiKey();
         credential = apiKey ? `?apikey=${apiKey}` : "";
       }
-      if (socket) {
-        socket.close();
+      if (socketRef.current) {
+        socketRef.current.close();
       }
-      socket = new WebSocket(
+      socketRef.current = new WebSocket(
         `${wssBaseUrl}/stream/workflow_runs/${workflowRunId}${credential}`,
       );
       // Listen for messages
-      socket.addEventListener("message", (event) => {
+      socketRef.current.addEventListener("message", (event) => {
         try {
           const message: StreamMessage = JSON.parse(event.data);
           if (message.screenshot) {
@@ -68,7 +68,7 @@ function WorkflowRunStream(props?: Props) {
             message.status === "failed" ||
             message.status === "terminated"
           ) {
-            socket?.close();
+            socketRef.current?.close();
             queryClient.invalidateQueries({
               queryKey: ["workflowRuns"],
             });
@@ -106,16 +106,16 @@ function WorkflowRunStream(props?: Props) {
         }
       });
 
-      socket.addEventListener("close", () => {
-        socket = null;
+      socketRef.current.addEventListener("close", () => {
+        socketRef.current = null;
       });
     }
     run();
 
     return () => {
-      if (socket) {
-        socket.close();
-        socket = null;
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
       }
     };
   }, [

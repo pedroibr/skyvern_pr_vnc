@@ -11,7 +11,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   statusIsFinalized,
   statusIsNotFinalized,
@@ -33,14 +33,13 @@ type StreamMessage = {
   screenshot?: string;
 };
 
-let socket: WebSocket | null = null;
-
 const wssBaseUrl = import.meta.env.VITE_WSS_BASE_URL;
 
 function TaskActions() {
   const taskId = useFirstParam("taskId", "runId");
   const credentialGetter = useCredentialGetter();
   const [streamImgSrc, setStreamImgSrc] = useState<string>("");
+  const socketRef = useRef<WebSocket | null>(null);
   const [selectedAction, setSelectedAction] = useState<
     number | "stream" | null
   >(null);
@@ -73,6 +72,7 @@ function TaskActions() {
     }
 
     async function run() {
+      setStreamImgSrc("");
       // Create WebSocket connection.
       let credential = null;
       if (credentialGetter) {
@@ -82,14 +82,14 @@ function TaskActions() {
         const apiKey = getRuntimeApiKey();
         credential = apiKey ? `?apikey=${apiKey}` : "";
       }
-      if (socket) {
-        socket.close();
+      if (socketRef.current) {
+        socketRef.current.close();
       }
-      socket = new WebSocket(
+      socketRef.current = new WebSocket(
         `${wssBaseUrl}/stream/tasks/${taskId}${credential}`,
       );
       // Listen for messages
-      socket.addEventListener("message", (event) => {
+      socketRef.current.addEventListener("message", (event) => {
         try {
           const message: StreamMessage = JSON.parse(event.data);
           if (message.screenshot) {
@@ -100,7 +100,7 @@ function TaskActions() {
             message.status === "failed" ||
             message.status === "terminated"
           ) {
-            socket?.close();
+            socketRef.current?.close();
             queryClient.invalidateQueries({
               queryKey: ["tasks"],
             });
@@ -126,16 +126,16 @@ function TaskActions() {
         }
       });
 
-      socket.addEventListener("close", () => {
-        socket = null;
+      socketRef.current.addEventListener("close", () => {
+        socketRef.current = null;
       });
     }
     run();
 
     return () => {
-      if (socket) {
-        socket.close();
-        socket = null;
+      if (socketRef.current) {
+        socketRef.current.close();
+        socketRef.current = null;
       }
     };
   }, [credentialGetter, taskId, taskIsRunningOrQueued, queryClient]);
