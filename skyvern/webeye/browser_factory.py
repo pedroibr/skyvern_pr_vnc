@@ -378,6 +378,7 @@ def _build_brightdata_proxy(proxy_location: ProxyLocationInput | None) -> dict |
         server = f"http://{server}"
 
     country = _resolve_country_code(proxy_location)
+    city = _resolve_city(proxy_location)
 
     username: str | None = None
     if country and username_template:
@@ -386,6 +387,9 @@ def _build_brightdata_proxy(proxy_location: ProxyLocationInput | None) -> dict |
         username = f"{username_base}-country-{country.lower()}"
     elif username_base:
         username = username_base
+
+    if username and city and country:
+        username = f"{username}-city-{city}"
 
     if not username:
         return None
@@ -426,6 +430,28 @@ def _resolve_country_code(proxy_location: ProxyLocationInput | None) -> str | No
             return None
         return ProxyLocation.get_country_code(proxy_enum)
     return None
+
+
+def _resolve_city(proxy_location: ProxyLocationInput | None) -> str | None:
+    if proxy_location is None:
+        return None
+    if isinstance(proxy_location, GeoTarget):
+        return _slugify_city(proxy_location.city)
+    if isinstance(proxy_location, dict):
+        return _slugify_city(proxy_location.get("city"))
+    return None
+
+
+def _slugify_city(value: str | None) -> str | None:
+    if not isinstance(value, str):
+        return None
+    raw = value.strip()
+    if not raw:
+        return None
+    normalized = raw.encode("ascii", "ignore").decode("ascii")
+    normalized = normalized.lower()
+    normalized = re.sub(r"[^a-z0-9]+", "", normalized)
+    return normalized or None
 
 
 def _is_valid_proxy_url(url: str) -> bool:
