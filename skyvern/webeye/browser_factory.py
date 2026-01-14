@@ -29,7 +29,7 @@ from skyvern.exceptions import UnknownBrowserType, UnknownErrorWhileCreatingBrow
 from skyvern.forge import app
 from skyvern.forge.sdk.api.files import get_download_dir, make_temp_directory
 from skyvern.forge.sdk.core.skyvern_context import current, ensure_context
-from skyvern.schemas.runs import ProxyLocation, get_tzinfo_from_proxy
+from skyvern.schemas.runs import GeoTarget, ProxyLocation, ProxyLocationInput, get_tzinfo_from_proxy
 from skyvern.webeye.browser_artifacts import BrowserArtifacts, VideoArtifact
 
 LOG = structlog.get_logger()
@@ -260,11 +260,11 @@ class BrowserContextFactory:
             args["env"] = env
 
         if settings.ENABLE_PROXY:
-            proxy_config = setup_proxy()
+            proxy_config = setup_proxy(proxy_location=proxy_location)
             if proxy_config:
                 args["proxy"] = proxy_config
 
-        if proxy_location:
+        if isinstance(proxy_location, ProxyLocation):
             if tz_info := get_tzinfo_from_proxy(proxy_location=proxy_location):
                 args["timezone_id"] = tz_info.key
         return args
@@ -304,8 +304,8 @@ class BrowserContextFactory:
                 set_browser_console_log(browser_context=browser_context, browser_artifacts=browser_artifacts)
             set_download_file_listener(browser_context=browser_context, **kwargs)
 
-            proxy_location: ProxyLocation | None = kwargs.get("proxy_location")
-            if proxy_location is not None:
+            proxy_location: ProxyLocationInput = kwargs.get("proxy_location")
+            if isinstance(proxy_location, ProxyLocation):
                 context = ensure_context()
                 context.tz_info = get_tzinfo_from_proxy(proxy_location)
 
@@ -322,7 +322,11 @@ class BrowserContextFactory:
             raise UnknownErrorWhileCreatingBrowserContext(browser_type, e) from e
 
 
-def setup_proxy() -> dict | None:
+def setup_proxy(proxy_location: ProxyLocationInput | None = None) -> dict | None:
+    brightdata_proxy = _build_brightdata_proxy(proxy_location)
+    if brightdata_proxy:
+        return brightdata_proxy
+
     if not settings.HOSTED_PROXY_POOL or settings.HOSTED_PROXY_POOL.strip() == "":
         LOG.warning("No proxy server value found. Continuing without using proxy...")
         return None
@@ -358,6 +362,70 @@ def setup_proxy() -> dict | None:
     except Exception as e:
         LOG.warning(f"Error setting up proxy: {e}. Continuing without proxy...")
         return None
+
+
+def _build_brightdata_proxy(proxy_location: ProxyLocationInput | None) -> dict | None:
+    server = settings.BRIGHTDATA_PROXY_SERVER
+    password = settings.BRIGHTDATA_PASSWORD
+    username_template = settings.BRIGHTDATA_USERNAME_TEMPLATE
+    username_base = settings.BRIGHTDATA_USERNAME_BASE
+
+    if not server or not password or not (username_template or username_base):
+        return None
+
+    server = server.strip()
+    if "://" not in server:
+        server = f"http://{server}"
+
+    country = _resolve_country_code(proxy_location)
+
+    username: str | None = None
+    if country and username_template:
+        username = username_template.format(country=country.lower())
+    elif country and username_base:
+        username = f"{username_base}-country-{country.lower()}"
+    elif username_base:
+        username = username_base
+
+    if not username:
+        return None
+
+    return {
+        "server": server,
+        "username": username,
+        "password": password,
+    }
+
+
+def _resolve_country_code(proxy_location: ProxyLocationInput | None) -> str | None:
+    if proxy_location is None:
+        return None
+    if isinstance(proxy_location, ProxyLocation):
+        if proxy_location == ProxyLocation.NONE:
+            return None
+        try:
+            return ProxyLocation.get_country_code(proxy_location)
+        except Exception:
+            return None
+    if isinstance(proxy_location, GeoTarget):
+        return proxy_location.country.upper()
+    if isinstance(proxy_location, dict):
+        country = proxy_location.get("country")
+        if isinstance(country, str) and country.strip():
+            return country.strip().upper()
+        return None
+    if isinstance(proxy_location, str):
+        value = proxy_location.strip()
+        if len(value) == 2 and value.isalpha():
+            return value.upper()
+        try:
+            proxy_enum = ProxyLocation(value)
+        except Exception:
+            return None
+        if proxy_enum == ProxyLocation.NONE:
+            return None
+        return ProxyLocation.get_country_code(proxy_enum)
+    return None
 
 
 def _is_valid_proxy_url(url: str) -> bool:

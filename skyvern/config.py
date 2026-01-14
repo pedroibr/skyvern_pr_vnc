@@ -78,6 +78,10 @@ class Settings(BaseSettings):
     # Format: "http://<username>:<password>@host:port, http://<username>:<password>@host:port, ...."
     HOSTED_PROXY_POOL: str = ""
     ENABLE_PROXY: bool = False
+    BRIGHTDATA_PROXY_SERVER: str | None = None
+    BRIGHTDATA_USERNAME_BASE: str | None = None
+    BRIGHTDATA_USERNAME_TEMPLATE: str | None = None
+    BRIGHTDATA_PASSWORD: str | None = None
 
     # Secret key for JWT. Please generate your own secret key in production
     SECRET_KEY: str = "PLACEHOLDER"
