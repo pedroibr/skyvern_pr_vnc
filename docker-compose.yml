@@ -35,6 +35,7 @@ services:
       - ./log:/data/log
       - ./.streamlit:/app/.streamlit
       - ./browser_sessions:/app/browser_sessions
+      - /root/brightdata_ca.crt:/usr/local/share/ca-certificates/brightdata.crt:ro
       # Uncomment the following two lines if you want to connect to any local changes
       # - ./skyvern:/app/skyvern
       # - ./alembic:/app/alembic
@@ -44,6 +45,8 @@ services:
       - ENABLE_CODE_BLOCK=true
       - BROWSER_WIDTH=1920
       - BROWSER_HEIGHT=980
+      - ENABLE_PROXY=true
+      - HOSTED_PROXY_POOL=http://brd-customer-hl_a7bdde50-zone-residential_proxy1:f26wlxluaaoj@brd.superproxy.io:33335
       # - BROWSER_TYPE=cdp-connect
       # Use this command to start Chrome with remote debugging:
       # "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="C:\chrome-cdp-profile" --no-first-run --no-default-browser-check

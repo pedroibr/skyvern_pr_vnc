@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 RUN playwright install-deps
 RUN playwright install
 RUN apt-get update \
- && apt-get install -y xauth x11-apps netpbm gpg ca-certificates x11vnc novnc websockify \
+ && apt-get install -y xauth x11-apps netpbm gpg ca-certificates x11vnc novnc websockify libnss3-tools \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 

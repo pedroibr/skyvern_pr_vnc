@@ -2,6 +2,22 @@
 
 set -e
 
+# Install Bright Data CA for Chromium if present.
+if [ -f "/usr/local/share/ca-certificates/brightdata.crt" ]; then
+    update-ca-certificates
+    if command -v certutil >/dev/null 2>&1; then
+        mkdir -p /root/.pki/nssdb
+        if [ ! -f /root/.pki/nssdb/cert9.db ]; then
+            certutil -N -d sql:/root/.pki/nssdb --empty-password
+        fi
+        if ! certutil -L -d sql:/root/.pki/nssdb | grep -q "BrightData CA"; then
+            certutil -A -n "BrightData CA" -t "C,," \
+                -i /usr/local/share/ca-certificates/brightdata.crt \
+                -d sql:/root/.pki/nssdb
+        fi
+    fi
+fi
+
 # Set ALLOWED_SKIP_DB_MIGRATION_VERSION env var to the DB version you want to allow (select * from alembic_version)
 # If current DB matches this version, migrations will be skipped. Use at your own risk.
 ALLOWED_SKIP_DB_MIGRATION_VERSION=${ALLOWED_SKIP_DB_MIGRATION_VERSION:-}
