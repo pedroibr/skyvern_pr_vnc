@@ -47,6 +47,9 @@ services:
       - BROWSER_HEIGHT=980
       - ENABLE_PROXY=true
       - HOSTED_PROXY_POOL=http://brd-customer-hl_a7bdde50-zone-residential_proxy1:f26wlxluaaoj@brd.superproxy.io:33335
+      - BRIGHTDATA_PROXY_SERVER=http://brd.superproxy.io:33335
+      - BRIGHTDATA_USERNAME_BASE=brd-customer-hl_a7bdde50-zone-residential_proxy1
+      - BRIGHTDATA_PASSWORD=f26wlxluaaoj
       # - BROWSER_TYPE=cdp-connect
       # Use this command to start Chrome with remote debugging:
       # "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="C:\chrome-cdp-profile" --no-first-run --no-default-browser-check
