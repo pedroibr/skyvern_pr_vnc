@@ -69,6 +69,7 @@ class RealBrowserState(BrowserState):
         self,
         url: str | None = None,
         proxy_location: ProxyLocationInput = None,
+        proxy_url: str | None = None,
         task_id: str | None = None,
         workflow_run_id: str | None = None,
         script_id: str | None = None,
@@ -87,6 +88,7 @@ class RealBrowserState(BrowserState):
                 self.pw,
                 url=url,
                 proxy_location=proxy_location,
+                proxy_url=proxy_url,
                 task_id=task_id,
                 workflow_run_id=workflow_run_id,
                 script_id=script_id,
@@ -276,6 +278,7 @@ class RealBrowserState(BrowserState):
         self,
         url: str | None = None,
         proxy_location: ProxyLocationInput = None,
+        proxy_url: str | None = None,
         task_id: str | None = None,
         workflow_run_id: str | None = None,
         script_id: str | None = None,
@@ -292,6 +295,7 @@ class RealBrowserState(BrowserState):
             await self.check_and_fix_state(
                 url=url,
                 proxy_location=proxy_location,
+                proxy_url=proxy_url,
                 task_id=task_id,
                 workflow_run_id=workflow_run_id,
                 script_id=script_id,
@@ -310,6 +314,7 @@ class RealBrowserState(BrowserState):
             await self.check_and_fix_state(
                 url=url,
                 proxy_location=proxy_location,
+                proxy_url=proxy_url,
                 task_id=task_id,
                 workflow_run_id=workflow_run_id,
                 script_id=script_id,
@@ -327,6 +332,7 @@ class RealBrowserState(BrowserState):
             await self.check_and_fix_state(
                 url=url,
                 proxy_location=proxy_location,
+                proxy_url=proxy_url,
                 task_id=task_id,
                 workflow_run_id=workflow_run_id,
                 script_id=script_id,

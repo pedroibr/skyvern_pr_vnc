@@ -61,6 +61,13 @@ class TaskRunRequest(UniversalBaseModel):
      Can also be a GeoTarget object for granular city/state targeting: {"country": "US", "subdivision": "CA", "city": "San Francisco"}
     """
 
+    proxy_url: typing.Optional[str] = pydantic.Field(default=None)
+    """
+
+    Explicit proxy URL to route browser traffic through (e.g. http://user:pass@host:port or socks5://user:pass@host:port).
+    If provided, this overrides proxy_location and any configured proxy pool for the run.
+    """
+
     data_extraction_schema: typing.Optional[TaskRunRequestDataExtractionSchema] = pydantic.Field(default=None)
     """
     

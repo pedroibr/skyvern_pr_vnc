@@ -51,6 +51,13 @@ class WorkflowRunRequest(UniversalBaseModel):
      Can also be a GeoTarget object for granular city/state targeting: {"country": "US", "subdivision": "CA", "city": "San Francisco"}
     """
 
+    proxy_url: typing.Optional[str] = pydantic.Field(default=None)
+    """
+
+    Explicit proxy URL to route browser traffic through (e.g. http://user:pass@host:port or socks5://user:pass@host:port).
+    If provided, this overrides proxy_location and any configured proxy pool for the run.
+    """
+
     webhook_url: typing.Optional[str] = pydantic.Field(default=None)
     """
     URL to send workflow status updates to after a run is finished. Refer to https://www.skyvern.com/docs/running-tasks/webhooks-faq for webhook questions.

@@ -1,7 +1,10 @@
 from enum import StrEnum
+import re
+from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
+from skyvern.schemas.docs.doc_strings import PROXY_URL_DOC_STRING
 from skyvern.schemas.runs import ProxyLocation
 
 
@@ -18,6 +21,11 @@ class BaseRunBlockRequest(BaseModel):
     url: str | None = Field(default=None, description="Website URL")
     webhook_url: str | None = Field(default=None, description="Webhook URL to send status updates")
     proxy_location: ProxyLocation | None = Field(default=None, description="Proxy location to use")
+    proxy_url: str | None = Field(
+        default=None,
+        description=PROXY_URL_DOC_STRING,
+        examples=["http://user:pass@host:port", "socks5://user:pass@host:port"],
+    )
     totp_identifier: str | None = Field(
         default=None, description="Identifier for TOTP (Time-based One-Time Password) if required"
     )
@@ -42,6 +50,26 @@ class BaseRunBlockRequest(BaseModel):
     max_screenshot_scrolling_times: int | None = Field(
         default=None, description="Maximum number of times to scroll for screenshots"
     )
+
+    @field_validator("proxy_url")
+    @classmethod
+    def validate_proxy_url(cls, proxy_url: str | None) -> str | None:
+        if not proxy_url:
+            return proxy_url
+        if not _is_valid_proxy_url(proxy_url):
+            raise ValueError("proxy_url must be a valid proxy URL (http/https/socks5)")
+        return proxy_url
+
+
+def _is_valid_proxy_url(url: str) -> bool:
+    proxy_pattern = re.compile(r"^(http|https|socks5):\/\/([^:@]+(:[^@]*)?@)?[^\s:\/]+(:\d+)?$")
+    try:
+        parsed = urlparse(url)
+        if not parsed.scheme or not parsed.netloc:
+            return False
+        return bool(proxy_pattern.match(url))
+    except Exception:
+        return False
 
 
 class LoginRequest(BaseRunBlockRequest):

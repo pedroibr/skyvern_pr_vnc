@@ -1,7 +1,9 @@
 import json
 from datetime import datetime
 from enum import StrEnum
+import re
 from typing import Any
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -42,6 +44,7 @@ class TaskV2(BaseModel):
     totp_verification_url: str | None = None
     totp_identifier: str | None = None
     proxy_location: ProxyLocationInput = None
+    proxy_url: str | None = None
     webhook_callback_url: str | None = None
     webhook_failure_reason: str | None = None
     extracted_information_schema: dict | list | str | None = None
@@ -115,6 +118,15 @@ class TaskV2(BaseModel):
     def deserialize_proxy_location(cls, proxy_location: ProxyLocationInput | str) -> ProxyLocationInput:
         return cls._parse_proxy_location(proxy_location)
 
+    @field_validator("proxy_url")
+    @classmethod
+    def validate_proxy_url(cls, proxy_url: str | None) -> str | None:
+        if not proxy_url:
+            return proxy_url
+        if not _is_valid_proxy_url(proxy_url):
+            raise ValueError("proxy_url must be a valid proxy URL (http/https/socks5)")
+        return proxy_url
+
 
 class ThoughtType(StrEnum):
     plan = "plan"
@@ -182,6 +194,7 @@ class TaskV2Request(BaseModel):
     totp_verification_url: str | None = None
     totp_identifier: str | None = None
     proxy_location: ProxyLocationInput = None
+    proxy_url: str | None = None
     publish_workflow: bool = False
     extracted_information_schema: dict | list | str | None = None
     error_code_mapping: dict[str, str] | None = None
@@ -203,3 +216,23 @@ class TaskV2Request(BaseModel):
     @classmethod
     def deserialize_proxy_location(cls, proxy_location: ProxyLocationInput | str) -> ProxyLocationInput:
         return TaskV2._parse_proxy_location(proxy_location)
+
+    @field_validator("proxy_url")
+    @classmethod
+    def validate_proxy_url(cls, proxy_url: str | None) -> str | None:
+        if not proxy_url:
+            return proxy_url
+        if not _is_valid_proxy_url(proxy_url):
+            raise ValueError("proxy_url must be a valid proxy URL (http/https/socks5)")
+        return proxy_url
+
+
+def _is_valid_proxy_url(url: str) -> bool:
+    proxy_pattern = re.compile(r"^(http|https|socks5):\/\/([^:@]+(:[^@]*)?@)?[^\s:\/]+(:\d+)?$")
+    try:
+        parsed = urlparse(url)
+        if not parsed.scheme or not parsed.netloc:
+            return False
+        return bool(proxy_pattern.match(url))
+    except Exception:
+        return False

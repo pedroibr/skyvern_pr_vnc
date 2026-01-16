@@ -63,6 +63,7 @@ class RawSkyvern:
         engine: typing.Optional[RunEngine] = OMIT,
         title: typing.Optional[str] = OMIT,
         proxy_location: typing.Optional[TaskRunRequestProxyLocation] = OMIT,
+        proxy_url: typing.Optional[str] = OMIT,
         data_extraction_schema: typing.Optional[TaskRunRequestDataExtractionSchema] = OMIT,
         error_code_mapping: typing.Optional[typing.Dict[str, typing.Optional[str]]] = OMIT,
         max_steps: typing.Optional[int] = OMIT,
@@ -192,6 +193,7 @@ class RawSkyvern:
                 "proxy_location": convert_and_respect_annotation_metadata(
                     object_=proxy_location, annotation=TaskRunRequestProxyLocation, direction="write"
                 ),
+                "proxy_url": proxy_url,
                 "data_extraction_schema": convert_and_respect_annotation_metadata(
                     object_=data_extraction_schema, annotation=TaskRunRequestDataExtractionSchema, direction="write"
                 ),
@@ -262,6 +264,7 @@ class RawSkyvern:
         parameters: typing.Optional[typing.Dict[str, typing.Optional[typing.Any]]] = OMIT,
         title: typing.Optional[str] = OMIT,
         proxy_location: typing.Optional[WorkflowRunRequestProxyLocation] = OMIT,
+        proxy_url: typing.Optional[str] = OMIT,
         webhook_url: typing.Optional[str] = OMIT,
         totp_url: typing.Optional[str] = OMIT,
         totp_identifier: typing.Optional[str] = OMIT,
@@ -373,6 +376,7 @@ class RawSkyvern:
                 "proxy_location": convert_and_respect_annotation_metadata(
                     object_=proxy_location, annotation=WorkflowRunRequestProxyLocation, direction="write"
                 ),
+                "proxy_url": proxy_url,
                 "webhook_url": webhook_url,
                 "totp_url": totp_url,
                 "totp_identifier": totp_identifier,
@@ -2650,6 +2654,7 @@ class AsyncRawSkyvern:
         engine: typing.Optional[RunEngine] = OMIT,
         title: typing.Optional[str] = OMIT,
         proxy_location: typing.Optional[TaskRunRequestProxyLocation] = OMIT,
+        proxy_url: typing.Optional[str] = OMIT,
         data_extraction_schema: typing.Optional[TaskRunRequestDataExtractionSchema] = OMIT,
         error_code_mapping: typing.Optional[typing.Dict[str, typing.Optional[str]]] = OMIT,
         max_steps: typing.Optional[int] = OMIT,
@@ -2772,16 +2777,17 @@ class AsyncRawSkyvern:
             "v1/run/tasks",
             method="POST",
             json={
-                "prompt": prompt,
-                "url": url,
-                "engine": engine,
-                "title": title,
-                "proxy_location": convert_and_respect_annotation_metadata(
-                    object_=proxy_location, annotation=TaskRunRequestProxyLocation, direction="write"
-                ),
-                "data_extraction_schema": convert_and_respect_annotation_metadata(
-                    object_=data_extraction_schema, annotation=TaskRunRequestDataExtractionSchema, direction="write"
-                ),
+            "prompt": prompt,
+            "url": url,
+            "engine": engine,
+            "title": title,
+            "proxy_location": convert_and_respect_annotation_metadata(
+                object_=proxy_location, annotation=TaskRunRequestProxyLocation, direction="write"
+            ),
+            "proxy_url": proxy_url,
+            "data_extraction_schema": convert_and_respect_annotation_metadata(
+                object_=data_extraction_schema, annotation=TaskRunRequestDataExtractionSchema, direction="write"
+            ),
                 "error_code_mapping": error_code_mapping,
                 "max_steps": max_steps,
                 "webhook_url": webhook_url,
@@ -2849,6 +2855,7 @@ class AsyncRawSkyvern:
         parameters: typing.Optional[typing.Dict[str, typing.Optional[typing.Any]]] = OMIT,
         title: typing.Optional[str] = OMIT,
         proxy_location: typing.Optional[WorkflowRunRequestProxyLocation] = OMIT,
+        proxy_url: typing.Optional[str] = OMIT,
         webhook_url: typing.Optional[str] = OMIT,
         totp_url: typing.Optional[str] = OMIT,
         totp_identifier: typing.Optional[str] = OMIT,
@@ -2955,12 +2962,13 @@ class AsyncRawSkyvern:
             },
             json={
                 "workflow_id": workflow_id,
-                "parameters": parameters,
-                "title": title,
-                "proxy_location": convert_and_respect_annotation_metadata(
-                    object_=proxy_location, annotation=WorkflowRunRequestProxyLocation, direction="write"
-                ),
-                "webhook_url": webhook_url,
+            "parameters": parameters,
+            "title": title,
+            "proxy_location": convert_and_respect_annotation_metadata(
+                object_=proxy_location, annotation=WorkflowRunRequestProxyLocation, direction="write"
+            ),
+            "proxy_url": proxy_url,
+            "webhook_url": webhook_url,
                 "totp_url": totp_url,
                 "totp_identifier": totp_identifier,
                 "browser_session_id": browser_session_id,

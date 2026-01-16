@@ -9,7 +9,7 @@ from skyvern.exceptions import MissingBrowserState
 from skyvern.forge import app
 from skyvern.forge.sdk.schemas.tasks import Task
 from skyvern.forge.sdk.workflow.models.workflow import WorkflowRun
-from skyvern.schemas.runs import ProxyLocation, ProxyLocationInput
+from skyvern.schemas.runs import ProxyLocationInput
 from skyvern.webeye.browser_artifacts import VideoArtifact
 from skyvern.webeye.browser_factory import BrowserContextFactory
 from skyvern.webeye.browser_manager import BrowserManager
@@ -26,6 +26,7 @@ class RealBrowserManager(BrowserManager):
     @staticmethod
     async def _create_browser_state(
         proxy_location: ProxyLocationInput = None,
+        proxy_url: str | None = None,
         url: str | None = None,
         task_id: str | None = None,
         workflow_run_id: str | None = None,
@@ -45,6 +46,7 @@ class RealBrowserManager(BrowserManager):
         ) = await BrowserContextFactory.create_browser_context(
             pw,
             proxy_location=proxy_location,
+            proxy_url=proxy_url,
             url=url,
             task_id=task_id,
             workflow_run_id=workflow_run_id,
@@ -116,6 +118,7 @@ class RealBrowserManager(BrowserManager):
             LOG.info("Creating browser state for task", task_id=task.task_id)
             browser_state = await self._create_browser_state(
                 proxy_location=task.proxy_location,
+                proxy_url=task.proxy_url,
                 url=task.url,
                 task_id=task.task_id,
                 organization_id=task.organization_id,
@@ -138,6 +141,7 @@ class RealBrowserManager(BrowserManager):
         await browser_state.get_or_create_page(
             url=task.url,
             proxy_location=task.proxy_location,
+            proxy_url=task.proxy_url,
             task_id=task.task_id,
             organization_id=task.organization_id,
             extra_http_headers=task.extra_http_headers,
@@ -195,6 +199,7 @@ class RealBrowserManager(BrowserManager):
             )
             browser_state = await self._create_browser_state(
                 proxy_location=workflow_run.proxy_location,
+                proxy_url=workflow_run.proxy_url,
                 url=url,
                 workflow_run_id=workflow_run.workflow_run_id,
                 organization_id=workflow_run.organization_id,
@@ -218,6 +223,7 @@ class RealBrowserManager(BrowserManager):
         await browser_state.get_or_create_page(
             url=url,
             proxy_location=workflow_run.proxy_location,
+            proxy_url=workflow_run.proxy_url,
             workflow_run_id=workflow_run.workflow_run_id,
             organization_id=workflow_run.organization_id,
             extra_http_headers=workflow_run.extra_http_headers,
@@ -421,7 +427,7 @@ class RealBrowserManager(BrowserManager):
                 page = await browser_state.get_working_page()
                 if not page:
                     LOG.warning("Browser state has no page to run the script", script_id=script_id)
-        proxy_location = ProxyLocation.RESIDENTIAL
+        proxy_location = None
         if not browser_state:
             browser_state = await self._create_browser_state(
                 proxy_location=proxy_location,

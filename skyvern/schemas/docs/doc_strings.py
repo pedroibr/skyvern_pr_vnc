@@ -14,7 +14,7 @@ PROXY_LOCATION_DOC_STRING = """
 Geographic Proxy location to route the browser traffic through. This is only available in Skyvern Cloud.
 
 Available geotargeting options:
-- RESIDENTIAL: the default value. Skyvern Cloud uses a random US residential proxy.
+- RESIDENTIAL: Skyvern Cloud uses a random US residential proxy.
 - RESIDENTIAL_ES: Spain
 - RESIDENTIAL_IE: Ireland
 - RESIDENTIAL_GB: United Kingdom
@@ -33,6 +33,11 @@ Available geotargeting options:
 - US-FL: Florida (deprecated, routes through RESIDENTIAL_ISP)
 - US-WA: Washington (deprecated, routes through RESIDENTIAL_ISP)
 - NONE: No proxy
+"""
+
+PROXY_URL_DOC_STRING = """
+Explicit proxy URL to route browser traffic through (e.g. http://user:pass@host:port or socks5://user:pass@host:port).
+If provided, this overrides proxy_location and any configured proxy pool for the run.
 """
 
 DATA_EXTRACTION_SCHEMA_DOC_STRING = """

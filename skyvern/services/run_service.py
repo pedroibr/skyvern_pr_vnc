@@ -64,6 +64,7 @@ async def get_run_response(run_id: str, organization_id: str | None = None) -> R
                 totp_identifier=task_v1_response.request.totp_identifier,
                 totp_url=task_v1_response.request.totp_verification_url,
                 proxy_location=task_v1_response.request.proxy_location,
+                proxy_url=task_v1_response.request.proxy_url,
                 max_steps=task_v1_response.max_steps_per_run,
                 data_extraction_schema=task_v1_response.request.extracted_information_schema,
                 error_code_mapping=task_v1_response.request.error_code_mapping,

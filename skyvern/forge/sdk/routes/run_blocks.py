@@ -23,7 +23,7 @@ from skyvern.forge.sdk.services import org_auth_service
 from skyvern.forge.sdk.workflow.models.parameter import WorkflowParameterType
 from skyvern.forge.sdk.workflow.models.workflow import Workflow, WorkflowRequestBody
 from skyvern.schemas.run_blocks import BaseRunBlockRequest, CredentialType, DownloadFilesRequest, LoginRequest
-from skyvern.schemas.runs import ProxyLocation, RunType, WorkflowRunRequest, WorkflowRunResponse
+from skyvern.schemas.runs import RunType, WorkflowRunRequest, WorkflowRunResponse
 from skyvern.schemas.workflows import (
     AzureVaultCredentialParameterYAML,
     BitwardenLoginCredentialParameterYAML,
@@ -71,6 +71,7 @@ async def _run_workflow_and_build_response(
     request_id = context.request_id
     legacy_workflow_request = WorkflowRequestBody(
         proxy_location=run_block_request.proxy_location,
+        proxy_url=run_block_request.proxy_url,
         webhook_callback_url=webhook_url,
         totp_identifier=totp_identifier,
         totp_verification_url=totp_verification_url,
@@ -107,6 +108,7 @@ async def _run_workflow_and_build_response(
             workflow_id=new_workflow.workflow_id,
             title=new_workflow.title,
             proxy_location=run_block_request.proxy_location,
+            proxy_url=run_block_request.proxy_url,
             webhook_url=webhook_url,
             totp_url=totp_verification_url,
             totp_identifier=totp_identifier,
@@ -254,7 +256,7 @@ async def login(
     workflow_create_request = WorkflowCreateYAMLRequest(
         title=new_workflow.title,
         description=new_workflow.description,
-        proxy_location=login_request.proxy_location or ProxyLocation.RESIDENTIAL,
+        proxy_location=login_request.proxy_location,
         workflow_definition=workflow_definition_yaml,
         status=new_workflow.status,
         max_screenshot_scrolls=login_request.max_screenshot_scrolling_times,
@@ -343,7 +345,7 @@ async def download_files(
     workflow_create_request = WorkflowCreateYAMLRequest(
         title=new_workflow.title,
         description=new_workflow.description,
-        proxy_location=download_files_request.proxy_location or ProxyLocation.RESIDENTIAL,
+        proxy_location=download_files_request.proxy_location,
         workflow_definition=workflow_definition_yaml,
         status=new_workflow.status,
         max_screenshot_scrolls=download_files_request.max_screenshot_scrolling_times,

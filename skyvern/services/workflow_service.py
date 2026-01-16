@@ -136,6 +136,7 @@ async def get_workflow_run_response(
             title=workflow_run_resp.workflow_title,
             parameters=workflow_run_resp.parameters,
             proxy_location=workflow_run.proxy_location,
+            proxy_url=workflow_run.proxy_url,
             webhook_url=workflow_run.webhook_callback_url or None,
             totp_url=workflow_run.totp_verification_url or None,
             totp_identifier=workflow_run.totp_identifier,

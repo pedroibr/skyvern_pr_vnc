@@ -28,6 +28,7 @@ async def ensure_workflow_run(
     legacy_workflow_request = WorkflowRequestBody(
         data=block_run_request.parameters,
         proxy_location=block_run_request.proxy_location,
+        proxy_url=block_run_request.proxy_url,
         webhook_callback_url=block_run_request.webhook_url,
         totp_identifier=block_run_request.totp_identifier,
         totp_verification_url=block_run_request.totp_url,

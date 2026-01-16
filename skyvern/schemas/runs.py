@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum
+import re
 from typing import Annotated, Any, Literal, Union
+from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -23,6 +25,7 @@ from skyvern.schemas.docs.doc_strings import (
     MAX_STEPS_DOC_STRING,
     MODEL_CONFIG,
     PROXY_LOCATION_DOC_STRING,
+    PROXY_URL_DOC_STRING,
     TASK_ENGINE_DOC_STRING,
     TASK_PROMPT_DOC_STRING,
     TASK_URL_DOC_STRING,
@@ -234,6 +237,17 @@ class GeoTarget(BaseModel):
 ProxyLocationInput = ProxyLocation | GeoTarget | dict | None
 
 
+def _is_valid_proxy_url(url: str) -> bool:
+    proxy_pattern = re.compile(r"^(http|https|socks5):\/\/([^:@]+(:[^@]*)?@)?[^\s:\/]+(:\d+)?$")
+    try:
+        parsed = urlparse(url)
+        if not parsed.scheme or not parsed.netloc:
+            return False
+        return bool(proxy_pattern.match(url))
+    except Exception:
+        return False
+
+
 def get_tzinfo_from_proxy(proxy_location: ProxyLocation) -> ZoneInfo | None:
     if proxy_location == ProxyLocation.NONE:
         return None
@@ -366,9 +380,14 @@ class TaskRunRequest(BaseModel):
         default=None, description="The title for the task", examples=["The title of my first skyvern task"]
     )
     proxy_location: ProxyLocation | GeoTarget | dict | None = Field(
-        default=ProxyLocation.RESIDENTIAL,
+        default=None,
         description=PROXY_LOCATION_DOC_STRING + " Can also be a GeoTarget object for granular city/state targeting: "
         '{"country": "US", "subdivision": "CA", "city": "San Francisco"}',
+    )
+    proxy_url: str | None = Field(
+        default=None,
+        description=PROXY_URL_DOC_STRING,
+        examples=["http://user:pass@host:port", "socks5://user:pass@host:port"],
     )
     data_extraction_schema: dict | list | str | None = Field(
         default=None,
@@ -430,6 +449,15 @@ class TaskRunRequest(BaseModel):
         examples=["http://127.0.0.1:9222", "ws://127.0.0.1:9222/devtools/browser/1234567890"],
     )
 
+    @field_validator("proxy_url")
+    @classmethod
+    def validate_proxy_url(cls, proxy_url: str | None) -> str | None:
+        if not proxy_url:
+            return proxy_url
+        if not _is_valid_proxy_url(proxy_url):
+            raise ValueError("proxy_url must be a valid proxy URL (http/https/socks5)")
+        return proxy_url
+
     @field_validator("url", "webhook_url", "totp_url")
     @classmethod
     def validate_urls(cls, url: str | None) -> str | None:
@@ -455,9 +483,14 @@ class WorkflowRunRequest(BaseModel):
     parameters: dict[str, Any] | None = Field(default=None, description="Parameters to pass to the workflow")
     title: str | None = Field(default=None, description="The title for this workflow run")
     proxy_location: ProxyLocation | GeoTarget | dict | None = Field(
-        default=ProxyLocation.RESIDENTIAL,
+        default=None,
         description=PROXY_LOCATION_DOC_STRING + " Can also be a GeoTarget object for granular city/state targeting: "
         '{"country": "US", "subdivision": "CA", "city": "San Francisco"}',
+    )
+    proxy_url: str | None = Field(
+        default=None,
+        description=PROXY_URL_DOC_STRING,
+        examples=["http://user:pass@host:port", "socks5://user:pass@host:port"],
     )
     webhook_url: str | None = Field(
         default=None,
@@ -502,6 +535,15 @@ class WorkflowRunRequest(BaseModel):
         default=None,
         description="Whether to run the workflow with agent or code.",
     )
+
+    @field_validator("proxy_url")
+    @classmethod
+    def validate_proxy_url(cls, proxy_url: str | None) -> str | None:
+        if not proxy_url:
+            return proxy_url
+        if not _is_valid_proxy_url(proxy_url):
+            raise ValueError("proxy_url must be a valid proxy URL (http/https/socks5)")
+        return proxy_url
 
     @field_validator("webhook_url", "totp_url")
     @classmethod

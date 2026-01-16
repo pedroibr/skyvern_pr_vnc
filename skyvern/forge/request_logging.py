@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import typing
 
 import structlog
@@ -24,6 +25,7 @@ _SENSITIVE_ENDPOINTS = {
 }
 _MAX_BODY_LENGTH = 1000
 _BINARY_PLACEHOLDER = "<binary>"
+_SENSITIVE_BODY_FIELDS = {"proxy_url"}
 
 
 def _sanitize_headers(headers: typing.Mapping[str, str]) -> dict[str, str]:
@@ -46,9 +48,37 @@ def _sanitize_body(request: Request, body: bytes, content_type: str | None) -> s
         text = body.decode("utf-8", errors="replace")
     except Exception:
         return _BINARY_PLACEHOLDER
+    if content_type and content_type.startswith("application/json"):
+        sanitized_json = _sanitize_json_body(text)
+        if sanitized_json is not None:
+            text = sanitized_json
     if len(text) > _MAX_BODY_LENGTH:
         return text[:_MAX_BODY_LENGTH] + "...[truncated]"
     return text
+
+
+def _sanitize_json_body(text: str) -> str | None:
+    try:
+        payload = json.loads(text)
+    except Exception:
+        return None
+    _redact_fields(payload)
+    try:
+        return json.dumps(payload, ensure_ascii=True)
+    except Exception:
+        return None
+
+
+def _redact_fields(value: typing.Any) -> None:
+    if isinstance(value, dict):
+        for key in list(value.keys()):
+            if key in _SENSITIVE_BODY_FIELDS:
+                value[key] = "****"
+            else:
+                _redact_fields(value[key])
+    elif isinstance(value, list):
+        for item in value:
+            _redact_fields(item)
 
 
 async def _get_response_body_str(response: Response) -> str:

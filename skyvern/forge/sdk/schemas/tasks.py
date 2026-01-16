@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum
+import re
 from typing import Any
+from urllib.parse import urlparse
 
 from fastapi import status
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -17,7 +19,7 @@ from skyvern.exceptions import (
 )
 from skyvern.forge.sdk.db.enums import TaskType
 from skyvern.forge.sdk.schemas.files import FileInfo
-from skyvern.schemas.docs.doc_strings import PROXY_LOCATION_DOC_STRING
+from skyvern.schemas.docs.doc_strings import PROXY_LOCATION_DOC_STRING, PROXY_URL_DOC_STRING
 from skyvern.schemas.runs import ProxyLocationInput
 from skyvern.utils.url_validators import validate_url
 
@@ -73,6 +75,11 @@ class TaskBase(BaseModel):
         default=None,
         description=PROXY_LOCATION_DOC_STRING,
     )
+    proxy_url: str | None = Field(
+        default=None,
+        description=PROXY_URL_DOC_STRING,
+        examples=["http://user:pass@host:port", "socks5://user:pass@host:port"],
+    )
     extracted_information_schema: dict[str, Any] | list | str | None = Field(
         default=None,
         description="The requested schema of the extracted information.",
@@ -118,6 +125,26 @@ class TaskBase(BaseModel):
         description="The maximum time to wait for downloads to complete, in seconds. If not set, defaults to BROWSER_DOWNLOAD_TIMEOUT seconds.",
         examples=[15.0],
     )
+
+    @field_validator("proxy_url")
+    @classmethod
+    def validate_proxy_url(cls, proxy_url: str | None) -> str | None:
+        if not proxy_url:
+            return proxy_url
+        if not _is_valid_proxy_url(proxy_url):
+            raise ValueError("proxy_url must be a valid proxy URL (http/https/socks5)")
+        return proxy_url
+
+
+def _is_valid_proxy_url(url: str) -> bool:
+    proxy_pattern = re.compile(r"^(http|https|socks5):\/\/([^:@]+(:[^@]*)?@)?[^\s:\/]+(:\d+)?$")
+    try:
+        parsed = urlparse(url)
+        if not parsed.scheme or not parsed.netloc:
+            return False
+        return bool(proxy_pattern.match(url))
+    except Exception:
+        return False
 
 
 class TaskRequest(TaskBase):

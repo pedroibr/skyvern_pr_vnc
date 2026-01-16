@@ -282,6 +282,7 @@ class ForgeAgent:
             navigation_payload=task_request.navigation_payload,
             organization_id=organization_id,
             proxy_location=task_request.proxy_location,
+            proxy_url=task_request.proxy_url,
             extracted_information_schema=task_request.extracted_information_schema,
             error_code_mapping=task_request.error_code_mapping,
             application=task_request.application,

@@ -2096,6 +2096,7 @@ class WorkflowService:
             browser_session_id=workflow_request.browser_session_id,
             browser_profile_id=workflow_request.browser_profile_id,
             proxy_location=workflow_request.proxy_location,
+            proxy_url=workflow_request.proxy_url,
             webhook_callback_url=workflow_request.webhook_callback_url,
             totp_verification_url=workflow_request.totp_verification_url,
             totp_identifier=workflow_request.totp_identifier,

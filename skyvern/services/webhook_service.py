@@ -66,6 +66,7 @@ def build_sample_task_payload(run_id: str | None = None) -> dict:
         data_extraction_goal="Collect sample output data",
         navigation_payload={"sample_field": "sample_value"},
         proxy_location=ProxyLocation.RESIDENTIAL,
+        proxy_url=None,
         extra_http_headers={"x-sample-header": "value"},
     )
 
@@ -122,6 +123,7 @@ def build_sample_task_payload(run_id: str | None = None) -> dict:
             data_extraction_schema=task_request.extracted_information_schema,
             error_code_mapping=task_request.error_code_mapping,
             proxy_location=task_request.proxy_location,
+            proxy_url=task_request.proxy_url,
             extra_http_headers=task_request.extra_http_headers,
             browser_session_id=None,
         ),
@@ -145,6 +147,7 @@ def build_sample_workflow_run_payload(run_id: str | None = None) -> dict:
         workflow_run_id=workflow_run_id,
         status=WorkflowRunStatus.completed,
         proxy_location=ProxyLocation.RESIDENTIAL,
+        proxy_url=None,
         webhook_callback_url="https://webhook.example.com/receive",
         queued_at=now,
         started_at=now,
@@ -192,6 +195,7 @@ def build_sample_workflow_run_payload(run_id: str | None = None) -> dict:
             title=payload_dict.get("workflow_title"),
             parameters=payload_dict.get("parameters"),
             proxy_location=ProxyLocation.RESIDENTIAL,
+            proxy_url=None,
             webhook_url=payload_dict.get("webhook_callback_url"),
         ),
     )

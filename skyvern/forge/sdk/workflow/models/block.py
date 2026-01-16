@@ -3849,6 +3849,7 @@ class TaskV2Block(Block):
                 user_url=resolved_url,
                 parent_workflow_run_id=workflow_run_id,
                 proxy_location=workflow_run.proxy_location,
+                proxy_url=workflow_run.proxy_url,
                 totp_identifier=resolved_totp_identifier,
                 totp_verification_url=resolved_totp_verification_url,
                 max_screenshot_scrolling_times=workflow_run.max_screenshot_scrolls,

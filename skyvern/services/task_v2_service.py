@@ -151,6 +151,7 @@ async def initialize_task_v2(
     user_prompt: str,
     user_url: str | None = None,
     proxy_location: ProxyLocationInput = None,
+    proxy_url: str | None = None,
     totp_identifier: str | None = None,
     totp_verification_url: str | None = None,
     webhook_callback_url: str | None = None,
@@ -174,6 +175,7 @@ async def initialize_task_v2(
         totp_identifier=totp_identifier,
         webhook_callback_url=webhook_callback_url,
         proxy_location=proxy_location,
+        proxy_url=proxy_url,
         extracted_information_schema=extracted_information_schema,
         error_code_mapping=error_code_mapping,
         model=model,
@@ -209,6 +211,7 @@ async def initialize_task_v2(
                 browser_session_id=browser_session_id,
                 extra_http_headers=extra_http_headers,
                 browser_address=browser_address,
+                proxy_url=proxy_url,
             ),
             workflow_permanent_id=new_workflow.workflow_permanent_id,
             organization=organization,
@@ -842,10 +845,13 @@ async def run_task_v2_helper(
             parameters=yaml_parameters,
             blocks=yaml_blocks,
         )
+        workflow_proxy_location = task_v2.proxy_location
+        if workflow_proxy_location is None and task_v2.proxy_url is None:
+            workflow_proxy_location = ProxyLocation.RESIDENTIAL
         workflow_create_request = WorkflowCreateYAMLRequest(
             title=workflow.title,
             description=workflow.description,
-            proxy_location=task_v2.proxy_location or ProxyLocation.RESIDENTIAL,
+            proxy_location=workflow_proxy_location,
             workflow_definition=workflow_definition_yaml,
             status=workflow.status,
             max_screenshot_scrolls=task_v2.max_screenshot_scrolls,
@@ -1795,6 +1801,7 @@ async def build_task_v2_run_response(task_v2: TaskV2) -> TaskRunResponse:
             totp_identifier=task_v2.totp_identifier,
             totp_url=task_v2.totp_verification_url,
             proxy_location=task_v2.proxy_location,
+            proxy_url=task_v2.proxy_url,
             data_extraction_schema=task_v2.extracted_information_schema,
             error_code_mapping=task_v2.error_code_mapping,
         ),

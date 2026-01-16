@@ -19,6 +19,7 @@ from skyvern.utils.url_validators import validate_url
 class WorkflowRequestBody(BaseModel):
     data: dict[str, Any] | None = None
     proxy_location: ProxyLocationInput = None
+    proxy_url: str | None = None
     webhook_callback_url: str | None = None
     totp_verification_url: str | None = None
     totp_identifier: str | None = None
@@ -144,6 +145,7 @@ class WorkflowRun(BaseModel):
     status: WorkflowRunStatus
     extra_http_headers: dict[str, str] | None = None
     proxy_location: ProxyLocationInput = None
+    proxy_url: str | None = None
     webhook_callback_url: str | None = None
     webhook_failure_reason: str | None = None
     totp_verification_url: str | None = None
@@ -188,6 +190,7 @@ class WorkflowRunResponseBase(BaseModel):
     status: WorkflowRunStatus
     failure_reason: str | None = None
     proxy_location: ProxyLocationInput = None
+    proxy_url: str | None = None
     webhook_callback_url: str | None = None
     webhook_failure_reason: str | None = None
     totp_verification_url: str | None = None

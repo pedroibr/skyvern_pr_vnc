@@ -375,7 +375,7 @@ class PersistentSessionsManager:
         runnable_id: str | None = None,
         runnable_type: str | None = None,
         timeout_minutes: int | None = None,
-        proxy_location: ProxyLocationInput = ProxyLocation.RESIDENTIAL,
+        proxy_location: ProxyLocationInput = None,
         extensions: list[Extensions] | None = None,
     ) -> PersistentBrowserSession:
         """Create a new browser session for an organization and return its ID with the browser state."""
