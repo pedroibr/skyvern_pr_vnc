@@ -72,6 +72,8 @@ async def _run_workflow_and_build_response(
     legacy_workflow_request = WorkflowRequestBody(
         proxy_location=run_block_request.proxy_location,
         proxy_url=run_block_request.proxy_url,
+        op_model=run_block_request.op_model,
+        op_api_key=run_block_request.op_api_key,
         webhook_callback_url=webhook_url,
         totp_identifier=totp_identifier,
         totp_verification_url=totp_verification_url,
@@ -109,6 +111,8 @@ async def _run_workflow_and_build_response(
             title=new_workflow.title,
             proxy_location=run_block_request.proxy_location,
             proxy_url=run_block_request.proxy_url,
+            op_model=run_block_request.op_model,
+            op_api_key=None,
             webhook_url=webhook_url,
             totp_url=totp_verification_url,
             totp_identifier=totp_identifier,

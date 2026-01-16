@@ -58,6 +58,18 @@ class WorkflowRunRequest(UniversalBaseModel):
     If provided, this overrides proxy_location and any configured proxy pool for the run.
     """
 
+    op_model: typing.Optional[str] = pydantic.Field(default=None)
+    """
+
+    OpenRouter model to use for this run (e.g. "openai/gpt-4o-mini" or "mistralai/mistral-small-3.1-24b-instruct").
+    """
+
+    op_api_key: typing.Optional[str] = pydantic.Field(default=None)
+    """
+
+    OpenRouter API key to use for this run. This is used only at runtime and is not persisted.
+    """
+
     webhook_url: typing.Optional[str] = pydantic.Field(default=None)
     """
     URL to send workflow status updates to after a run is finished. Refer to https://www.skyvern.com/docs/running-tasks/webhooks-faq for webhook questions.

@@ -31,6 +31,8 @@ class SkyvernContext:
     max_screenshot_scrolls: int | None = None
     browser_container_ip: str | None = None
     browser_container_task_arn: str | None = None
+    op_model: str | None = None
+    op_api_key: str | None = None
 
     # feature flags
     enable_parse_select_in_extract: bool = False

@@ -446,6 +446,34 @@ class LLMAPIHandlerFactory:
                 )
 
             context = skyvern_context.current()
+            op_model = context.op_model if context else None
+            op_api_key = context.op_api_key if context else None
+            if op_model or op_api_key:
+                model_name = op_model or settings.OPENROUTER_MODEL
+                api_key = op_api_key or settings.OPENROUTER_API_KEY
+                if model_name and api_key:
+                    llm_key_override = f"openrouter/{model_name}"
+                    llm_caller = LLMCaller(
+                        llm_key=llm_key_override,
+                        base_parameters=base_parameters,
+                        openrouter_api_key=api_key,
+                    )
+                    return await llm_caller.call(
+                        prompt=prompt,
+                        prompt_name=prompt_name,
+                        step=step,
+                        task_v2=task_v2,
+                        thought=thought,
+                        ai_suggestion=ai_suggestion,
+                        screenshots=screenshots,
+                        parameters=parameters,
+                        organization_id=organization_id,
+                        tools=tools,
+                        use_message_history=use_message_history,
+                        raw_response=raw_response,
+                        window_dimension=window_dimension,
+                        force_dict=force_dict,
+                    )
             is_speculative_step = step.is_speculative if step else False
             should_persist_llm_artifacts, artifact_targets = _get_artifact_targets_and_persist_flag(
                 step, is_speculative_step, task_v2, thought, ai_suggestion
@@ -847,6 +875,36 @@ class LLMAPIHandlerFactory:
             force_dict: bool = True,
         ) -> dict[str, Any] | Any:
             start_time = time.time()
+            if llm_key == "OPENROUTER":
+                context = skyvern_context.current()
+                op_model = context.op_model if context else None
+                op_api_key = context.op_api_key if context else None
+                if op_model or op_api_key:
+                    model_name = op_model or settings.OPENROUTER_MODEL
+                    api_key = op_api_key or settings.OPENROUTER_API_KEY
+                    if model_name and api_key:
+                        llm_key_override = f"openrouter/{model_name}"
+                        llm_caller = LLMCaller(
+                            llm_key=llm_key_override,
+                            base_parameters=base_parameters,
+                            openrouter_api_key=api_key,
+                        )
+                        return await llm_caller.call(
+                            prompt=prompt,
+                            prompt_name=prompt_name,
+                            step=step,
+                            task_v2=task_v2,
+                            thought=thought,
+                            ai_suggestion=ai_suggestion,
+                            screenshots=screenshots,
+                            parameters=parameters,
+                            organization_id=organization_id,
+                            tools=tools,
+                            use_message_history=use_message_history,
+                            raw_response=raw_response,
+                            window_dimension=window_dimension,
+                            force_dict=force_dict,
+                        )
             active_parameters = base_parameters or {}
             if parameters is None:
                 parameters = LLMAPIHandlerFactory.get_api_parameters(llm_config)
@@ -1258,6 +1316,7 @@ class LLMCaller:
         llm_key: str,
         screenshot_scaling_enabled: bool = False,
         base_parameters: dict[str, Any] | None = None,
+        openrouter_api_key: str | None = None,
     ):
         self.original_llm_key = llm_key
         self.llm_key = llm_key
@@ -1274,8 +1333,9 @@ class LLMCaller:
         self.openai_client = None
         if self.llm_key.startswith("openrouter/"):
             self.llm_key = self.llm_key.replace("openrouter/", "")
+            api_key = openrouter_api_key if openrouter_api_key is not None else settings.OPENROUTER_API_KEY
             self.openai_client = AsyncOpenAI(
-                api_key=settings.OPENROUTER_API_KEY,
+                api_key=api_key,
                 base_url=settings.OPENROUTER_API_BASE,
                 http_client=ForgeAsyncHttpxClientWrapper(),
             )

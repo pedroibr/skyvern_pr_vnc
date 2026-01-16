@@ -93,6 +93,8 @@ class BackgroundTaskExecutor(AsyncExecutor):
         browser_session_id: str | None,
         block_labels: list[str] | None,
         block_outputs: dict[str, Any] | None,
+        op_model: str | None,
+        op_api_key: str | None,
         **kwargs: dict,
     ) -> None:
         if background_tasks:
@@ -113,6 +115,8 @@ class BackgroundTaskExecutor(AsyncExecutor):
                 browser_session_id=browser_session_id,
                 block_labels=block_labels,
                 block_outputs=block_outputs,
+                op_model=op_model,
+                op_api_key=op_api_key,
             )
         else:
             LOG.warning("Background tasks not enabled, skipping workflow execution")

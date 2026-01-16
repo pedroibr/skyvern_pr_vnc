@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from skyvern.config import settings
 from skyvern.forge.sdk.schemas.files import FileInfo
 from skyvern.schemas.docs.doc_examples import (
     BROWSER_SESSION_ID_EXAMPLES,
@@ -24,6 +25,8 @@ from skyvern.schemas.docs.doc_strings import (
     ERROR_CODE_MAPPING_DOC_STRING,
     MAX_STEPS_DOC_STRING,
     MODEL_CONFIG,
+    OP_API_KEY_DOC_STRING,
+    OP_MODEL_DOC_STRING,
     PROXY_LOCATION_DOC_STRING,
     PROXY_URL_DOC_STRING,
     TASK_ENGINE_DOC_STRING,
@@ -492,6 +495,16 @@ class WorkflowRunRequest(BaseModel):
         description=PROXY_URL_DOC_STRING,
         examples=["http://user:pass@host:port", "socks5://user:pass@host:port"],
     )
+    op_model: str | None = Field(
+        default=None,
+        description=OP_MODEL_DOC_STRING,
+        examples=["openai/gpt-4o-mini", "mistralai/mistral-small-3.1-24b-instruct"],
+    )
+    op_api_key: str | None = Field(
+        default=None,
+        description=OP_API_KEY_DOC_STRING,
+        examples=["sk-or-1234567890"],
+    )
     webhook_url: str | None = Field(
         default=None,
         description="URL to send workflow status updates to after a run is finished. Refer to https://www.skyvern.com/docs/running-tasks/webhooks-faq for webhook questions.",
@@ -545,6 +558,15 @@ class WorkflowRunRequest(BaseModel):
             raise ValueError("proxy_url must be a valid proxy URL (http/https/socks5)")
         return proxy_url
 
+    @field_validator("op_model")
+    @classmethod
+    def normalize_op_model(cls, op_model: str | None) -> str | None:
+        if not op_model:
+            return op_model
+        if op_model.startswith("openrouter/"):
+            return op_model.split("openrouter/", 1)[1]
+        return op_model
+
     @field_validator("webhook_url", "totp_url")
     @classmethod
     def validate_urls(cls, url: str | None) -> str | None:
@@ -556,6 +578,10 @@ class WorkflowRunRequest(BaseModel):
     def validate_browser_reference(cls, values: WorkflowRunRequest) -> WorkflowRunRequest:
         if values.browser_session_id and values.browser_profile_id:
             raise ValueError("Cannot specify both browser_session_id and browser_profile_id")
+        if values.op_api_key and not values.op_model and not settings.OPENROUTER_MODEL:
+            raise ValueError("op_model is required when no default OpenRouter model is configured")
+        if values.op_model and not values.op_api_key and not settings.OPENROUTER_API_KEY:
+            raise ValueError("op_api_key is required when no default OpenRouter API key is configured")
         return values
 
 

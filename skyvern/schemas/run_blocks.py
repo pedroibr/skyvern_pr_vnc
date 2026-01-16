@@ -2,9 +2,10 @@ from enum import StrEnum
 import re
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
-from skyvern.schemas.docs.doc_strings import PROXY_URL_DOC_STRING
+from skyvern.config import settings
+from skyvern.schemas.docs.doc_strings import OP_API_KEY_DOC_STRING, OP_MODEL_DOC_STRING, PROXY_URL_DOC_STRING
 from skyvern.schemas.runs import ProxyLocation
 
 
@@ -25,6 +26,16 @@ class BaseRunBlockRequest(BaseModel):
         default=None,
         description=PROXY_URL_DOC_STRING,
         examples=["http://user:pass@host:port", "socks5://user:pass@host:port"],
+    )
+    op_model: str | None = Field(
+        default=None,
+        description=OP_MODEL_DOC_STRING,
+        examples=["openai/gpt-4o-mini", "mistralai/mistral-small-3.1-24b-instruct"],
+    )
+    op_api_key: str | None = Field(
+        default=None,
+        description=OP_API_KEY_DOC_STRING,
+        examples=["sk-or-1234567890"],
     )
     totp_identifier: str | None = Field(
         default=None, description="Identifier for TOTP (Time-based One-Time Password) if required"
@@ -59,6 +70,26 @@ class BaseRunBlockRequest(BaseModel):
         if not _is_valid_proxy_url(proxy_url):
             raise ValueError("proxy_url must be a valid proxy URL (http/https/socks5)")
         return proxy_url
+
+    @field_validator("op_api_key")
+    @classmethod
+    def validate_op_keys(cls, op_api_key: str | None, info: ValidationInfo) -> str | None:
+        op_model = info.data.get("op_model") if info.data else None
+        if op_api_key and not op_model and not settings.OPENROUTER_MODEL:
+            raise ValueError("op_model is required when no default OpenRouter model is configured")
+        return op_api_key
+
+    @field_validator("op_model")
+    @classmethod
+    def normalize_op_model(cls, op_model: str | None, info: ValidationInfo) -> str | None:
+        if not op_model:
+            return op_model
+        op_api_key = info.data.get("op_api_key") if info.data else None
+        if not op_api_key and not settings.OPENROUTER_API_KEY:
+            raise ValueError("op_api_key is required when no default OpenRouter API key is configured")
+        if op_model.startswith("openrouter/"):
+            return op_model.split("openrouter/", 1)[1]
+        return op_model
 
 
 def _is_valid_proxy_url(url: str) -> bool:

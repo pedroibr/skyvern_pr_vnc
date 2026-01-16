@@ -20,6 +20,8 @@ class WorkflowRequestBody(BaseModel):
     data: dict[str, Any] | None = None
     proxy_location: ProxyLocationInput = None
     proxy_url: str | None = None
+    op_model: str | None = None
+    op_api_key: str | None = None
     webhook_callback_url: str | None = None
     totp_verification_url: str | None = None
     totp_identifier: str | None = None

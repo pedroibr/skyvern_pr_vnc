@@ -4793,9 +4793,12 @@ class AgentDB(BaseAlchemyDB):
                     )
                 ).first()
                 if persistent_browser_session:
-                    if persistent_browser_session.completed_at:
-                        return PersistentBrowserSession.model_validate(persistent_browser_session)
-                    persistent_browser_session.completed_at = datetime.utcnow()
+                    if not persistent_browser_session.completed_at:
+                        persistent_browser_session.completed_at = datetime.utcnow()
+                    # Clear address metadata so ports can be reused after close.
+                    persistent_browser_session.browser_address = None
+                    persistent_browser_session.ip_address = None
+                    persistent_browser_session.ecs_task_arn = None
                     await session.commit()
                     await session.refresh(persistent_browser_session)
                     return PersistentBrowserSession.model_validate(persistent_browser_session)

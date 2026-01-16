@@ -458,6 +458,8 @@ class WorkflowService:
                 workflow_permanent_id=workflow_run.workflow_permanent_id,
                 max_steps_override=max_steps_override,
                 max_screenshot_scrolls=workflow_request.max_screenshot_scrolls,
+                op_model=workflow_request.op_model,
+                op_api_key=workflow_request.op_api_key,
             )
         )
 
@@ -620,6 +622,8 @@ class WorkflowService:
         block_labels: list[str] | None = None,
         block_outputs: dict[str, Any] | None = None,
         browser_session_id: str | None = None,
+        op_model: str | None = None,
+        op_api_key: str | None = None,
     ) -> WorkflowRun:
         """Execute a workflow."""
         organization_id = organization.organization_id
@@ -632,6 +636,15 @@ class WorkflowService:
             block_labels=block_labels,
             block_outputs=block_outputs,
         )
+        context = skyvern_context.current()
+        if not context:
+            context = SkyvernContext()
+            skyvern_context.set(context)
+        context.organization_id = organization_id
+        context.workflow_run_id = workflow_run_id
+        context.run_id = context.run_id or workflow_run_id
+        context.op_model = op_model
+        context.op_api_key = op_api_key
         workflow_run = await self.get_workflow_run(workflow_run_id=workflow_run_id, organization_id=organization_id)
         workflow = await self.get_workflow_by_permanent_id(workflow_permanent_id=workflow_run.workflow_permanent_id)
         browser_profile_id = workflow_run.browser_profile_id

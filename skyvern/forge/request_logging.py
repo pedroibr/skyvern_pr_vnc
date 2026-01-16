@@ -25,7 +25,7 @@ _SENSITIVE_ENDPOINTS = {
 }
 _MAX_BODY_LENGTH = 1000
 _BINARY_PLACEHOLDER = "<binary>"
-_SENSITIVE_BODY_FIELDS = {"proxy_url"}
+_SENSITIVE_BODY_FIELDS = {"proxy_url", "op_api_key"}
 
 
 def _sanitize_headers(headers: typing.Mapping[str, str]) -> dict[str, str]:

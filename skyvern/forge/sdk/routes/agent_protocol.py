@@ -360,6 +360,8 @@ async def run_workflow(
         data=workflow_run_request.parameters,
         proxy_location=workflow_run_request.proxy_location,
         proxy_url=workflow_run_request.proxy_url,
+        op_model=workflow_run_request.op_model,
+        op_api_key=workflow_run_request.op_api_key,
         webhook_callback_url=workflow_run_request.webhook_url,
         totp_identifier=workflow_run_request.totp_identifier,
         totp_verification_url=workflow_run_request.totp_url,
@@ -393,7 +395,7 @@ async def run_workflow(
         workflow_id=workflow_run.workflow_id,
         organization_id=current_org.organization_id,
     )
-    workflow_run_request_hydrated = workflow_run_request
+    workflow_run_request_hydrated = workflow_run_request.model_copy(update={"op_api_key": None})
     if workflow:
         workflow_run_request_hydrated = workflow_run_request.model_copy(update={"title": workflow.title})
 
@@ -1501,6 +1503,8 @@ async def run_block(
         user_id=user_id,
         browser_session_id=browser_session_id,
         block_outputs=block_run_request.block_outputs,
+        op_model=block_run_request.op_model,
+        op_api_key=block_run_request.op_api_key,
     )
 
     return BlockRunResponse(

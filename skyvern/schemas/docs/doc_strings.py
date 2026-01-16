@@ -40,6 +40,14 @@ Explicit proxy URL to route browser traffic through (e.g. http://user:pass@host:
 If provided, this overrides proxy_location and any configured proxy pool for the run.
 """
 
+OP_MODEL_DOC_STRING = """
+OpenRouter model to use for this run (e.g. "openai/gpt-4o-mini" or "mistralai/mistral-small-3.1-24b-instruct").
+"""
+
+OP_API_KEY_DOC_STRING = """
+OpenRouter API key to use for this run. This is used only at runtime and is not persisted.
+"""
+
 DATA_EXTRACTION_SCHEMA_DOC_STRING = """
 The schema for data to be extracted from the webpage. If you're looking for consistent data schema being returned by the agent, it's highly recommended to use https://json-schema.org/.
 """

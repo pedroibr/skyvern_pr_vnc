@@ -521,6 +521,8 @@ async def run_task_v2_helper(
 
     context: skyvern_context.SkyvernContext | None = skyvern_context.current()
     current_run_id = context.run_id if context and context.run_id else task_v2_id
+    op_model = context.op_model if context else None
+    op_api_key = context.op_api_key if context else None
     # task v2 can be nested inside a workflow run, so we need to use the root workflow run id
     root_workflow_run_id = context.root_workflow_run_id if context and context.root_workflow_run_id else workflow_run_id
     enable_parse_select_in_extract = await app.EXPERIMENTATION_PROVIDER.is_feature_enabled_cached(
@@ -540,6 +542,8 @@ async def run_task_v2_helper(
             browser_session_id=browser_session_id,
             max_screenshot_scrolls=task_v2.max_screenshot_scrolls,
             enable_parse_select_in_extract=bool(enable_parse_select_in_extract),
+            op_model=op_model,
+            op_api_key=op_api_key,
         )
     )
 

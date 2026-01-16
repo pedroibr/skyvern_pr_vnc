@@ -35,6 +35,8 @@ class AsyncExecutor(abc.ABC):
         browser_session_id: str | None,
         block_labels: list[str] | None,
         block_outputs: dict[str, Any] | None,
+        op_model: str | None,
+        op_api_key: str | None,
         **kwargs: dict,
     ) -> None:
         pass

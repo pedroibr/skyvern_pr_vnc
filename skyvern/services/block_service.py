@@ -29,6 +29,8 @@ async def ensure_workflow_run(
         data=block_run_request.parameters,
         proxy_location=block_run_request.proxy_location,
         proxy_url=block_run_request.proxy_url,
+        op_model=block_run_request.op_model,
+        op_api_key=block_run_request.op_api_key,
         webhook_callback_url=block_run_request.webhook_url,
         totp_identifier=block_run_request.totp_identifier,
         totp_verification_url=block_run_request.totp_url,
@@ -65,6 +67,8 @@ async def execute_blocks(
     user_id: str,
     browser_session_id: str | None = None,
     block_outputs: dict[str, t.Any] | None = None,
+    op_model: str | None = None,
+    op_api_key: str | None = None,
 ) -> None:
     """
     Runs one or more blocks of a workflow.
@@ -117,4 +121,6 @@ async def execute_blocks(
         api_key=api_key,
         block_labels=block_labels,
         block_outputs=block_outputs,
+        op_model=op_model,
+        op_api_key=op_api_key,
     )

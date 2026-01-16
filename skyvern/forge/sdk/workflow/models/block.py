@@ -3881,6 +3881,8 @@ class TaskV2Block(Block):
             root_workflow_run_id = (
                 context.root_workflow_run_id if context and context.root_workflow_run_id else workflow_run_id
             )
+            op_model = context.op_model if context else None
+            op_api_key = context.op_api_key if context else None
             skyvern_context.set(
                 skyvern_context.SkyvernContext(
                     organization_id=organization_id,
@@ -3892,6 +3894,8 @@ class TaskV2Block(Block):
                     run_id=current_run_id,
                     browser_session_id=browser_session_id,
                     max_screenshot_scrolls=workflow_run.max_screenshot_scrolls,
+                    op_model=op_model,
+                    op_api_key=op_api_key,
                 )
             )
         result_dict = None

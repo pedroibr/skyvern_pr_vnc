@@ -99,6 +99,8 @@ async def run_workflow(
         api_key=api_key,
         block_labels=block_labels,
         block_outputs=block_outputs,
+        op_model=workflow_request.op_model,
+        op_api_key=workflow_request.op_api_key,
     )
 
     return workflow_run
